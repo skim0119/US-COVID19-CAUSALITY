@@ -160,8 +160,9 @@ class TransferEntropy:
         density = self.combinations(self.k + 1)
         div = np.zeros_like(numerator)
         for j, c in enumerate(combinations):
-            if not denominator[density.index(c[0 : self.k + 1])]:
-                div[j] = numerator[j] / denominator[density.index(c[0 : self.k + 1])]
+            denom = denominator[density.index(c[0 : self.k + 1])]
+            if not np.isclose(denom, 0.0):
+                div[j] = numerator[j] / denom
         return div
 
     def combinations(self, length):

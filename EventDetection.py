@@ -12,15 +12,13 @@ from tqdm import tqdm
 # Implementation of: V. Gurainik, J. Srivastava, Event detection from time series data (1999)
 # To track the equations as exactly as possible, all the variable names are kept same as the paper.
 
-class EventDetection:
 
-    def __init__(self, p:int=8):
-        self.p = p-1  # Polynomial Degree
+class EventDetection:
+    def __init__(self, p: int = 8):
+        self.p = p - 1  # Polynomial Degree
         self.Change_points = set()  # stored in index
         self.Candidates = set()
-        self.MSet = [
-            odr.polynomial(self.p)
-        ]
+        self.MSet = [odr.polynomial(self.p)]
         self.Q = {}
 
     def pick_likelihood_criteria(self, T):
@@ -32,9 +30,13 @@ class EventDetection:
             for change_point in list(self.Change_points) + [len(T)]:
                 if c < change_point:
                     if (prev_cp, c) not in self.Q:
-                        self.Q[(prev_cp, c)] = self.find_likelihood_criteria(T[prev_cp:c])
+                        self.Q[(prev_cp, c)] = self.find_likelihood_criteria(
+                            T[prev_cp:c]
+                        )
                     if (c, change_point) not in self.Q:
-                        self.Q[(c, change_point)] = self.find_likelihood_criteria(T[c:change_point])
+                        self.Q[(c, change_point)] = self.find_likelihood_criteria(
+                            T[c:change_point]
+                        )
                     likelihood += self.Q[(prev_cp, c)] + self.Q[(c, change_point)]
                 prev_cp = change_point
             if min_likelihood is None or likelihood < min_likelihood:
@@ -61,7 +63,7 @@ class EventDetection:
         output = odr_obj.run()
         poly = np.poly1d(output.beta[::-1])
         predict = poly(t)
-        
+
         return np.linalg.norm(predict - T), poly
 
     def fit(self, T, m):
@@ -71,6 +73,7 @@ class EventDetection:
         # Return likelihood criteria: -2log(L)
         def m_sigma_square(T):
             return len(T) * (self.rss(T, m)) ** 2
+
         likelihood_criteria = 0
         sindex = 0
         for idx in list(self.Change_points):
@@ -94,17 +97,22 @@ class EventDetection:
         eindex = eindex or len(T)
         T = T.iloc[sindex:eindex]
         optimal_likelihood_criteria = None
-        split = len(T)//2
+        split = len(T) // 2
         for i in tqdm(range(self.p, len(T) - self.p)):
-            likelihood_criteria = self.find_likelihood_criteria(T[:i]) + self.find_likelihood_criteria(T[i:])
-            if optimal_likelihood_criteria is None or likelihood_criteria < optimal_likelihood_criteria:
+            likelihood_criteria = self.find_likelihood_criteria(
+                T[:i]
+            ) + self.find_likelihood_criteria(T[i:])
+            if (
+                optimal_likelihood_criteria is None
+                or likelihood_criteria < optimal_likelihood_criteria
+            ):
                 split = sindex + i
                 optimal_likelihood_criteria = likelihood_criteria
         return split
 
     # Procedure (Figure 1)
     def detect_change_points(self, T):
-        T.index = T.index.astype(int) / (10**9)
+        T.index = T.index.astype(int) / (10 ** 9)
         T.index -= T.index.min()
         new_change_point = self.find_candidate(T)
 
@@ -123,8 +131,8 @@ class EventDetection:
             print(new_change_point)
             print(c1)
             print(c2)
-            print("-"*10)
-            input('')
+            print("-" * 10)
+            input("")
 
             new_change_point, L = self.pick_likelihood_criteria(T)
             self.Candidates.remove(new_change_point)
@@ -140,6 +148,7 @@ class EventDetection:
         imin = arr[np.where(arr < new_change_point)[0][-1]]
         return (imin, new_change_point), (new_change_point, imax)
 
+
 def debug():
     from CovidRawDataManager import CovidRawDataManager
 
@@ -149,12 +158,13 @@ def debug():
     )
     df = statewise_cases_df.diff().rolling("7D").sum().dropna()
 
-    #df.Alabama.plot()
+    # df.Alabama.plot()
     data = df.Alabama
     print(f"{data.shape=}")
 
     ed = EventDetection()
     print(ed.detect_change_points(data.iloc[:100]))
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     debug()

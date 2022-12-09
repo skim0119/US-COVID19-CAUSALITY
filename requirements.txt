@@ -2,4 +2,8 @@ numpy
 matplotlib
 tqdm
 networkx
+igraph
 geopy
+leidenalg
+dash
+yaml
